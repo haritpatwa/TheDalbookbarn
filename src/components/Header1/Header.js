@@ -9,10 +9,19 @@ class Header extends Component {
     constructor(props) {
 
         super(props);
+        this.backendUrl = "http://localhost:9000"
         this.state = {
-            cartItems: localStorage.getItem("cart") ? JSON.parse(localStorage.getItem("cart"))["cart"].length : 0
+            cartItems: 0
         }
     };
+
+    componentWillMount = () => {
+        fetch(this.backendUrl+"/users")
+        .then((res)=>res.json())
+        .then((data)=>{
+            this.setState({cartItems: data.user[0].cart.length})
+        })
+    }
 
     cartClicked = () => {
         window.location.href = "/Cart"

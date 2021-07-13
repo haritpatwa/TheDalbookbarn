@@ -3,36 +3,63 @@ import {Button} from 'react-bootstrap';
 import Header1 from '../Header1/Header';
 import bookimg from '../../images/book.jpeg';
 import './Cart.css';
+import axios from 'axios';
+
 class Cart extends Component {
   
-   
     constructor(props) {
 
         super(props); 
+        this.backendUrl = "http://localhost:9000"
         this.state = {data: [], totalPay : 0}
     };
 
     componentWillMount = async () => {
-        let data = localStorage.getItem("cart") ? JSON.parse(localStorage.getItem("cart")) : {"cart": []}
-        let total = 0
-        await data["cart"].map((r)=>{
-            total += r.price;
+        await fetch(this.backendUrl+"/users")
+        .then((res)=>res.json())
+        .then(async (data)=>{
+            let user = data.user[0]
+            let cart = user.cart
+            let tmp = []
+            let sum = 0
+            for(let i=0;i<cart.length;i++)
+            {
+                await fetch(this.backendUrl+"/books/book/"+cart[i].bookId)
+                .then((res1)=>res1.json())
+                .then(async (data1)=>{
+                    await tmp.push({
+                        "title": data1.book.title,
+                        "description": data1.book.Description,
+                        "quantity": cart[i].quantity,
+                        "price": data1.book.Price,
+                        "bookId": cart[i].bookId
+                    })
+                    sum += (data1.book.Price*cart[i].quantity)
+                })
+            }
+            await this.setState({data: tmp, totalPay: sum})
         })
-        this.setState({data: data["cart"], totalPay : total})
     }
 
     removeFromCart = async (event) => {
 
         let id = event.target.id
-        let data = localStorage.getItem("cart") ? JSON.parse(localStorage.getItem("cart")) : {"cart": []}
-        let res = data.cart;
-        res = res.filter((r)=>{
-            if(r.id==id)return false
-            return true;
+        await fetch(this.backendUrl+"/users")
+        .then((res)=>res.json())
+        .then(async (data)=>{
+            let user = data.user[0]
+            let cart = user.cart
+            cart = cart.filter((r)=>{
+                if(r.bookId==id)return false
+                return true;
+            })
+            user.cart = cart;
+            await axios.post(this.backendUrl+"/users/addToCart", user)
+            .then((data1)=>{
+                console.log("Book removed successfully")
+                window.location.reload()
+            })
         })
-        data["cart"] = res
-        await localStorage.setItem("cart",JSON.stringify(data))
-        window.location.reload()
     }
 
     checkout = () => {
@@ -87,7 +114,7 @@ class Cart extends Component {
                                                     <td className="c2">{cart.price}</td>
                                                 </tr>
                                                 <tr>
-                                                <button className="btn btn-sm btn-danger seet-btn-position custom-button" id={cart.id} onClick={this.removeFromCart}>Remove</button>
+                                                <button className="btn btn-sm btn-danger seet-btn-position custom-button" id={cart.bookId} onClick={this.removeFromCart}>Remove</button>
                                                 </tr>
                                             </tbody>
                                         </table>

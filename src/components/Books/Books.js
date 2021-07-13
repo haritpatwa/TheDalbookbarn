@@ -3,55 +3,60 @@ import { FormText } from 'react-bootstrap';
 import './Books.css';
 import Header1 from '../Header1/Header';
 import bookimg from '../../images/book.jpeg';
-import BooksData from './BooksData.json';
+import axios from 'axios';
+// import BooksData from './BooksData.json';
 class Books extends Component {
   
    
     constructor(props) {
-
-        super(props); 
-        this.state = {first : 0, second: 0}
+        super(props);
+        this.backendUrl = "http://localhost:9000" 
+        this.state = {first : 0, second: 0, BooksData: []}
     };
 
     componentWillMount = () => {
-        let first = Math.ceil(BooksData.length/3)
-        let second = Math.ceil((BooksData.length - first)/2)
-        this.setState({first: first , second: second})
+        fetch(this.backendUrl+"/books")
+        .then((res)=>res.json())
+        .then((data)=>{
+            let first = Math.ceil(data.books.length/3)
+            let second = Math.ceil((data.books.length - first)/2)
+            console.log(data.books)
+            this.setState({first: first , second: second, BooksData : data.books})
+        })
     }
 
     addBook = async (event) => {
         let id = event.target.id
-        let data = localStorage.getItem("cart") ? JSON.parse(localStorage.getItem("cart")) : {"cart": []}
-        let res = data.cart;
 
-        await BooksData.map((book)=>{
-            if(book._id==id){
-                let found = null
-                res = res.filter((r)=>{
-                    if(r.id==id){
-                        found = r;
-                        return false
-                    }
-                    return true
-                })
-                if(found!=null){
-                    found.quantity += 1
-                    found.price = book.price*found.quantity
-                    res.push(found)
-                } else {
-                    res.push({
-                        "id": book._id,
-                        "title": book.title,
-                        "quantity": 1,
-                        "price": book.price,
-                        "description": book.description
-                    })
+        await fetch(this.backendUrl+"/users")
+        .then((res)=>res.json())
+        .then(async (data)=>{
+            let user = data.user[0]
+            let cart = user.cart
+
+            let found = false;
+            for(let i=0;i<cart.length;i++)
+            {
+                if(cart[i].bookId == id){
+                    cart[i].quantity += 1
+                    found = true;
+                    break;
                 }
             }
+
+            if(!found){
+                cart.push({
+                    "bookId": id,
+                    "quantity": 1
+                })
+            }
+            user.cart = cart;
+            await axios.post(this.backendUrl+"/users/addToCart", user)
+            .then((data1)=>{
+                console.log("Book added successfully")
+                window.location.reload()
+            })
         })
-        data["cart"] = res
-        await localStorage.setItem("cart",JSON.stringify(data))
-        window.location.reload()
     }
 
     
@@ -64,7 +69,7 @@ class Books extends Component {
             <div className="row col-md-12 set-row-style">
                 <div className="col-md-4">
                     {
-                        BooksData.slice(0,this.state.first).map((book)=>{
+                        this.state.BooksData.slice(0,this.state.first).map((book)=>{
                         return <div class="card set-card-style custom-classs" >
                                 <img class="card-img-top set-img-style" src={bookimg} alt="Card image cap"/>
                                 <div class="card-body">
@@ -73,22 +78,22 @@ class Books extends Component {
                                             <tr>
                                                 <td className="c1">Title</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.title}</td>
+                                                <td className="c2">{book.Title}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Description</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.description}</td>
+                                                <td className="c2">{book.Description}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Genre</td>
                                                 <td>:</td>
-                                                <td className="c2">Mystry, Historical Fiction, Family Saga </td>
+                                                <td className="c2">{book.Genre}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Price</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.price}</td>
+                                                <td className="c2">{book.Price}</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -100,7 +105,7 @@ class Books extends Component {
                 </div>
                 <div className="col-md-4">
                     {
-                        BooksData.slice(this.state.first, this.state.first + this.state.second).map((book)=>{
+                        this.state.BooksData.slice(this.state.first, this.state.first + this.state.second).map((book)=>{
                         return <div class="card set-card-style custom-classs">
                                 <img class="card-img-top set-img-style" src={bookimg} alt="Card image cap"/>
                                 <div class="card-body">
@@ -109,22 +114,22 @@ class Books extends Component {
                                             <tr>
                                                 <td className="c1">Title</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.title}</td>
+                                                <td className="c2">{book.Title}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Description</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.description}</td>
+                                                <td className="c2">{book.Description}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Genre</td>
                                                 <td>:</td>
-                                                <td className="c2">Mystry, Historical Fiction, Family Saga </td>
+                                                <td className="c2">{book.Genre}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Price</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.price}</td>
+                                                <td className="c2">{book.Price}</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -136,7 +141,7 @@ class Books extends Component {
                 </div>
                 <div className="col-md-4">
                     {
-                        BooksData.slice(this.state.first + this.state.second , BooksData.length).map((book)=>{
+                        this.state.BooksData.slice(this.state.first + this.state.second , this.state.BooksData.length).map((book)=>{
                         return <div class="card set-card-style custom-classs">
                                <img class="card-img-top set-img-style" src={bookimg} alt="Card image cap"/>
                                 <div class="card-body">
@@ -145,22 +150,22 @@ class Books extends Component {
                                             <tr>
                                                 <td className="c1">Title</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.title}</td>
+                                                <td className="c2">{book.Title}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Description</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.description}</td>
+                                                <td className="c2">{book.Description}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Genre</td>
                                                 <td>:</td>
-                                                <td className="c2">Mystry, Historical Fiction, Family Saga </td>
+                                                <td className="c2">{book.Genre}</td>
                                             </tr>
                                             <tr>
                                                 <td className="c1">Price</td>
                                                 <td>:</td>
-                                                <td className="c2">{book.price}</td>
+                                                <td className="c2">{book.Price}</td>
                                             </tr>
                                         </tbody>
                                     </table>

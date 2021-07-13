@@ -10,7 +10,7 @@ class Header extends Component {
 
         super(props);
         this.state = {
-            cartItems: localStorage.getItem("cart") ? JSON.parse(localStorage.getItem("cart"))["cart"].length : 0
+            cartItems: 0
         }
     };
 
